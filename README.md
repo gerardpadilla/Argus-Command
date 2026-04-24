@@ -1,10 +1,10 @@
-# 🛡️ Argus Command v2.0
+# Argus Command v2.0
 
 **Argus Command** (formerly Aegis-Recon) is the central operations hub that coordinates human operators and AI agents during red team engagements, providing real-time situational awareness, automated evidence collection, and intelligent action recommendations. 
 
 *100 Eyes on Your Target Network*
 
-## 🛠️ Core Capabilities
+## Core Capabilities
 
 ### 1. AI Agent Integration
 - Argus coordinates directly with an OpenClaw AI pentesting agent, communicating via real-time JSON state tracking (`/tmp/argus_agent_state.json`).
@@ -24,7 +24,7 @@
 - **Nmap Orchestrator**: Executes stealth `-sS` scans to bypass rudimentary endpoint loggers and graphs them beautifully using **Vis.js**.
 - **Scapy Wiretap**: Quietly listens to network traffic concurrently alongside active scans.
 
-## 🚀 Deployment Guide (Kali Linux)
+## Deployment Guide (Kali Linux)
 This is an air-gapped system designed specifically for Kali Linux virtual machines.
 
 ```bash
