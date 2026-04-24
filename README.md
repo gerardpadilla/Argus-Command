@@ -33,6 +33,10 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
+# Create your local environment variables
+echo "OPENCLAW_API_KEY=your_key_here" > .env
+echo "OPENCLAW_MODEL=qwen-3.5" >> .env
+
 # Start Argus Command Server
 sudo $(which python3) backend/main.py
 ```
