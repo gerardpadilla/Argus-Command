@@ -12,6 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const actionContainer = document.getElementById('action-modules-container');
     const actionPlaceholder = document.getElementById('actions-placeholder');
     const activityFeed = document.getElementById('live-activity-feed');
+    const phaseSelect = document.getElementById('agent-phase-select');
+    const mentorBtn = document.getElementById('btn-mentor-send');
+    const mentorInput = document.getElementById('mentor-chat-input');
+    const mentorFeed = document.getElementById('ai-mentor-feed');
     
     // Live Activity Feeder
     function logActivity(message, color = '#a3e635') {
@@ -171,6 +175,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             
             if (res.ok) {
+                // Save globally for AI Chat Context
+                window.lastScanData = data.scan_data;
+                
                 // Formatting markdown slightly
                 let formattedAi = data.ai_analysis
                     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -280,5 +287,71 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Ignore silent poll fails
             }
         }, 5000); // 5 sec interval
+    }
+    
+    // Phase Changing Logic
+    if (phaseSelect) {
+        phaseSelect.addEventListener('change', async (e) => {
+            const newPhase = parseInt(e.target.value);
+            try {
+                const res = await fetch('/api/v1/system/phase', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phase: newPhase })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    logActivity(`Engagement Phase officially escalated to ${data.phase_info.name} (Phase ${data.phase_info.phase}). Guardrails updated.`, "#facc15");
+                }
+            } catch (err) {
+                logActivity("Failed to escalate phase with backend.", "red");
+            }
+        });
+    }
+
+    // AI Mentor Chat Logic
+    if (mentorBtn && mentorInput) {
+        mentorBtn.addEventListener('click', async () => {
+            const userText = mentorInput.value.trim();
+            if (!userText) return;
+
+            // UI append user message
+            mentorFeed.innerHTML += `<div style="margin-top: 10px;"><strong>You:</strong> ${userText}</div>`;
+            mentorInput.value = '';
+            mentorBtn.disabled = true;
+            mentorBtn.innerText = "Thinking...";
+            mentorFeed.scrollTop = mentorFeed.scrollHeight;
+
+            try {
+                const res = await fetch('/api/v1/agent/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        message: userText, 
+                        scan_data: window.lastScanData || null 
+                    })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    const formatted = data.response.replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br>');
+                    mentorFeed.innerHTML += `<div style="margin-top: 10px; color: var(--accent);"><strong>Mentor:</strong> ${formatted}</div>`;
+                } else {
+                    mentorFeed.innerHTML += `<div style="margin-top: 10px; color: red;"><strong>System:</strong> Unable to reach mentor.</div>`;
+                }
+            } catch (err) {
+                mentorFeed.innerHTML += `<div style="margin-top: 10px; color: red;"><strong>System:</strong> Communication error.</div>`;
+            } finally {
+                mentorBtn.disabled = false;
+                mentorBtn.innerText = "Send";
+                mentorFeed.scrollTop = mentorFeed.scrollHeight;
+            }
+        });
+        
+        mentorInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                mentorBtn.click();
+            }
+        });
     }
 });

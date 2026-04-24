@@ -4,6 +4,7 @@ from typing import Dict, Any
 
 from backend.core import system, packet_monitor, scanner, ai_advisor, executor
 from backend.models import hash_crack
+from backend.models.phase_gate import PhaseGate
 
 router = APIRouter()
 
@@ -15,11 +16,20 @@ class ToolRequest(BaseModel):
     target: str
     port: str = None
 
+class ChatRequest(BaseModel):
+    message: str
+    scan_data: dict = None
+
+class PhaseRequest(BaseModel):
+    phase: int
+
 class HashRequest(BaseModel):
     hash_value: str
 
 @router.post("/tools/execute")
 def execute_tool_route(req: ToolRequest):
+    if not PhaseGate.is_tool_allowed(req.tool_name):
+        raise HTTPException(status_code=403, detail=f"Tool '{req.tool_name}' is physically blocked by Argus Phase Gate in {PhaseGate.get_current_phase_info()['name']} (Phase {PhaseGate.current_phase}).")
     output = executor.execute_tool(req.tool_name, req.target, req.port)
     return {"status": "success", "output": output}
 
@@ -38,6 +48,21 @@ def get_stats():
 @router.post("/system/kill")
 def kill_scans():
     return system.kill_python_scans()
+
+@router.get("/system/phase")
+def get_phase():
+    return PhaseGate.get_current_phase_info()
+
+@router.post("/system/phase")
+def set_phase(req: PhaseRequest):
+    if PhaseGate.set_phase(req.phase):
+        return {"status": "success", "phase_info": PhaseGate.get_current_phase_info()}
+    raise HTTPException(status_code=400, detail="Invalid phase level.")
+
+@router.post("/agent/chat")
+async def chat_with_agent(req: ChatRequest):
+    response = await ai_advisor.chat_with_mentor(req.message, req.scan_data)
+    return {"response": response}
 
 @router.post("/recon/start")
 async def start_recon(req: ScanRequest):

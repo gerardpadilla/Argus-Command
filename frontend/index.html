@@ -25,7 +25,14 @@
     <!-- Tier 1: Agent Status Bar -->
     <div class="agent-status-bar">
         <span>🤖 OPENCLAW AGENT STATUS</span>
-        <span id="agent-phase-display">Phase: 1 (Network Recon)</span>
+        <span>
+            Phase: 
+            <select id="agent-phase-select" style="background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: var(--accent); padding: 4px; border-radius: 4px;">
+                <option value="1">1 (Reconnaissance)</option>
+                <option value="2">2 (DMZ Attacks)</option>
+                <option value="3">3 (Internal LAN)</option>
+            </select>
+        </span>
         <span id="agent-target-display">Target: None</span>
         <span id="agent-duration-display">Duration: 00:00:00</span>
     </div>
@@ -120,8 +127,8 @@
                     <p class="placeholder-text" style="margin-top: 10px;">Chat interface ready. Connect OpenClaw to engage.</p>
                 </div>
                 <div style="display: flex; gap: 10px;">
-                    <input type="text" placeholder="Ask Mentor for guidance..." style="background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: #fff; padding: 8px; flex-grow: 1; border-radius: 6px;" disabled>
-                    <button class="btn-primary" style="margin: 0; width: auto; padding: 8px 15px;" disabled>Send</button>
+                    <input type="text" id="mentor-chat-input" placeholder="Ask Mentor for guidance..." style="background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: #fff; padding: 8px; flex-grow: 1; border-radius: 6px;">
+                    <button class="btn-primary" id="btn-mentor-send" style="margin: 0; width: auto; padding: 8px 15px;">Send</button>
                 </div>
             </section>
         </div>

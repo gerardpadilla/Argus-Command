@@ -21,9 +21,9 @@ async def analyze_scan_results(scan_data: dict, packet_data: list):
     summary = "Discovered Hosts & Ports:\n"
     for node in scan_data.get('nodes', []):
         if node.get('group') == 'host':
-            summary += f"- Host: {node.get('label')}\n"
-        elif node.get('group') == 'port':
-            summary += f"  - {node.get('title', '').replace(chr(10), ' ')}\n"
+            summary += f"- Host: {node.get('label').replace(chr(10), ' ')}\n"
+            for port in node.get('ports', []):
+                summary += f"  - Port {port.get('port')}/${port.get('service')} ({port.get('product')})\n"
             
     summary += f"\nTotal Packets Captured: {len(packet_data)}\n"
     
@@ -56,3 +56,42 @@ Provide a concise, action-oriented response.
     except Exception as e:
         # Provide fallback behavior for when OpenClaw isn't running on MacBook
         return "**[Fallback Offline Mode]** The specialized AI Gateway is not connected or the endpoint is mismatched. Operating without AI.\n\n*General Open-Port Advice:*\n- SMB (445): Run `enum4linux -a <target>` to enumerate shares.\n- HTTP (80/443): Run `nikto -h <target>` to find vulnerabilities.\n- SSH (22): Attempt brute-force with `hydra -l root -P dict.txt ssh://<target>`."
+
+async def chat_with_mentor(user_message: str, scan_data: dict):
+    headers = {
+        "Authorization": f"Bearer {OPENCLAW_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    summary = "Current Engagement Context:\n"
+    if scan_data and scan_data.get("nodes"):
+        for node in scan_data.get('nodes', []):
+            if node.get('group') == 'host':
+                summary += f"Target {node.get('label').replace(chr(10), ' ')} -> Ports: {[p.get('port') for p in node.get('ports', [])]}\n"
+    else:
+        summary += "No active targets scanned yet.\n"
+        
+    prompt = f"""
+{summary}
+
+User Question: {user_message}
+
+Provide a brief, conversational answer to the pentester.
+"""
+    payload = {
+        "model": OPENCLAW_MODEL,
+        "messages": [
+            {"role": "system", "content": "You are a specialized pentest mentor. Give direct advice."},
+            {"role": "user", "content": prompt}
+        ],
+        "max_tokens": 500
+    }
+    
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            response = await client.post(f"{OPENCLAW_BASE_URL}/chat/completions", json=payload, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            return data["choices"][0]["message"]["content"]
+    except Exception as e:
+        return f"[Fallback Offline] Unable to reach OpenClaw Model ({OPENCLAW_MODEL}). Did you configure .env correctly? Question ignored."
