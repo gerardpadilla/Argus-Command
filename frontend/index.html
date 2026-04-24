@@ -19,66 +19,112 @@
             <h1>Argus Command <span class="version-tag">v2.0 (Air-Gapped)</span></h1>
         </div>
         
-        <div class="system-monitor" id="sys-monitor">
-            <div class="stat">
-                <span class="label">CPU</span>
-                <span class="value" id="cpu-val">--%</span>
-            </div>
-            <div class="stat">
-                <span class="label">RAM</span>
-                <span class="value" id="ram-val">--%</span>
-                <span class="sub-value" id="ram-mb">(-- / -- MB)</span>
-            </div>
-            <button id="btn-kill-switch" class="btn-danger">KILL SCANS</button>
-        </div>
+        <!-- Removed system-monitor from header since it is now in Stats panel -->
     </header>
+
+    <!-- Tier 1: Agent Status Bar -->
+    <div class="agent-status-bar">
+        <span>🤖 OPENCLAW AGENT STATUS</span>
+        <span id="agent-phase-display">Phase: 1 (Network Recon)</span>
+        <span id="agent-target-display">Target: None</span>
+        <span id="agent-duration-display">Duration: 00:00:00</span>
+    </div>
 
     <!-- Main Content Grid -->
     <main class="grid-container">
         
-        <!-- Controls Panel -->
-        <section class="glass-panel panel-controls">
-            <h2>Reconnaissance Engine</h2>
-            <div class="input-group">
-                <label for="target-ip">Target IP / CIDR</label>
-                <input type="text" id="target-ip" value="127.0.0.1" placeholder="e.g., 10.10.10.0/24">
-            </div>
-            <button id="btn-start-recon" class="btn-primary">
-                <span class="icon">⚡</span> Start Recon
-            </button>
-            <div class="status-msg" id="recon-status">Ready</div>
-        </section>
-
-        <!-- Network Topology Panel -->
-        <section class="glass-panel panel-topology">
-            <h2>Network Topology</h2>
-            <div id="vis-network-container"></div>
-        </section>
-
-        <!-- AI Advisor & Actions Panel -->
-        <section class="glass-panel panel-ai">
-            <h2><span class="icon">🤖</span> Junior Pentest Mentor</h2>
-            <div class="ai-content" id="ai-output">
-                <p class="placeholder-text">Awaiting scan results for analysis...</p>
-            </div>
-            
-            <div id="action-modules-container" style="display: none; margin-top: 15px;">
-                <h3 style="font-size: 0.95rem; margin-bottom: 10px; color: var(--accent);">Actionable Modules</h3>
-                <div id="action-buttons-grid" style="display: flex; flex-wrap: wrap; gap: 10px;">
-                    <!-- Buttons injected here dynamically -->
+        <!-- Controls -> now merged into Tier 2 -->
+        <section class="glass-panel" style="margin-bottom: -10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="input-group" style="flex-direction: row; align-items: center; gap: 15px;">
+                    <label for="target-ip">Target IP / CIDR</label>
+                    <input type="text" id="target-ip" value="127.0.0.1" placeholder="e.g., 10.10.10.0/24" style="width: 250px;">
+                    <button id="btn-start-recon" class="btn-primary" style="margin: 0; padding: 10px 20px; width: auto;">
+                        <span class="icon">⚡</span> Start Recon
+                    </button>
+                    <div class="status-msg" id="recon-status" style="margin: 0;">Ready</div>
                 </div>
             </div>
+        </section>
+
+        <!-- Tier 2: Topology & Live Feed -->
+        <div class="tier-split-50">
+            <!-- Left: Network Topology -->
+            <section class="glass-panel" style="display: flex; flex-direction: column;">
+                <h2>Network Topology</h2>
+                <div id="vis-network-container"></div>
+            </section>
             
-            <!-- Hash Cracking Module -->
-            <div style="margin-top: 15px; border-top: 1px solid #333; padding-top: 10px;">
-                <h3 style="font-size: 0.95rem; margin-bottom: 10px; color: var(--accent);">🔓 Password Cracking Status:</h3>
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" id="hash-input" placeholder="Enter hash to crack..." style="background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: #fff; padding: 5px; flex-grow: 1;">
+            <!-- Right: Live Activity Feed -->
+            <section class="glass-panel" style="display: flex; flex-direction: column;">
+                <h2><span class="icon">📡</span> Live Activity Feed</h2>
+                <div id="live-activity-feed" class="ai-content feed-log">
+                    <div><span class="timestamp">[00:00:00]</span>Argus System Initialized. Awaiting targets...</div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Tier 3: Recommendations, Actions, Stats -->
+        <div class="tier-split-3-col">
+            <!-- Left: AI Recommendations -->
+            <section class="glass-panel">
+                <h2><span class="icon">💡</span> Recommendations</h2>
+                <div class="ai-content" id="ai-output" style="height: auto; min-height: 150px; background: transparent; border: none; padding: 0;">
+                    <p class="placeholder-text" style="margin-top: 20px;">Awaiting scan results...</p>
+                </div>
+            </section>
+
+            <!-- Middle: Actionable Modules -->
+            <section class="glass-panel">
+                <h2><span class="icon">🔧</span> Active Actions</h2>
+                <div id="action-modules-container" style="display: none;">
+                    <div id="action-buttons-grid" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        <!-- Buttons injected here dynamically -->
+                    </div>
+                </div>
+                <p id="actions-placeholder" class="placeholder-text" style="margin-top: 20px;">No actionable ports discovered yet.</p>
+            </section>
+
+            <!-- Right: Statistics -->
+            <section class="glass-panel">
+                <h2><span class="icon">📊</span> Statistics</h2>
+                <div class="system-monitor" style="justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 15px;">
+                    <div class="stat"><span class="label">CPU</span><span class="value" id="cpu-val">--%</span></div>
+                    <div class="stat"><span class="label">RAM</span><span class="value" id="ram-val">--%</span><span class="sub-value" id="ram-mb">(-- / -- MB)</span></div>
+                </div>
+                <button id="btn-kill-switch" class="btn-danger" style="width: 100%;">KILL SCANS</button>
+            </section>
+        </div>
+
+        <!-- Tier 4: Hash Cracking & AI Mentor -->
+        <div class="tier-split-50" style="height: 250px;">
+            <!-- Left: Hash Cracking -->
+            <section class="glass-panel">
+                <h2><span class="icon">🔓</span> Hash Cracking Status</h2>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="text" id="hash-input" placeholder="Enter hash to crack..." style="background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: #fff; padding: 8px; flex-grow: 1; border-radius: 6px;">
                     <button class="btn-action" onclick="submitHash()" id="btn-hash">Crack!</button>
                 </div>
-                <p id="hash-status" style="font-family: monospace; color: #aaa; margin-top: 10px; font-size: 0.8rem;">Ready to execute locally...</p>
-            </div>
-        </section>
+                <div class="feed-log" style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; height: 100px; overflow-y: auto;">
+                    <p id="hash-status" style="margin: 0; color: #aaa;">Ready to execute locally. Awaiting hash input.</p>
+                </div>
+            </section>
+
+            <!-- Right: Junior Pentest Mentor Chat -->
+            <section class="glass-panel">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 style="margin: 0;"><span class="icon">🧠</span> AI Mentor Chat</h2>
+                    <span id="mentor-status" class="status-indicator" style="font-size: 0.8rem;">● Standby</span>
+                </div>
+                <div class="ai-content" id="ai-mentor-feed" style="height: 100px; margin-bottom: 10px;">
+                    <p class="placeholder-text" style="margin-top: 10px;">Chat interface ready. Connect OpenClaw to engage.</p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" placeholder="Ask Mentor for guidance..." style="background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: #fff; padding: 8px; flex-grow: 1; border-radius: 6px;" disabled>
+                    <button class="btn-primary" style="margin: 0; width: auto; padding: 8px 15px;" disabled>Send</button>
+                </div>
+            </section>
+        </div>
 
     </main>
 </div>

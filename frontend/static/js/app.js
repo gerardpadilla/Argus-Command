@@ -9,6 +9,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const targetInput = document.getElementById('target-ip');
     const statusMsg = document.getElementById('recon-status');
     const aiOutput = document.getElementById('ai-output');
+    const actionContainer = document.getElementById('action-modules-container');
+    const actionPlaceholder = document.getElementById('actions-placeholder');
+    const activityFeed = document.getElementById('live-activity-feed');
+    
+    // Live Activity Feeder
+    function logActivity(message, color = '#a3e635') {
+        const now = new Date();
+        const timeStr = now.toTimeString().split(' ')[0];
+        
+        const line = document.createElement('div');
+        line.innerHTML = `<span class="timestamp">[${timeStr}]</span> <span style="color: ${color};">${message}</span>`;
+        activityFeed.appendChild(line);
+        activityFeed.scrollTop = activityFeed.scrollHeight;
+    }
     
     // Stat Elements
     const cpuVal = document.getElementById('cpu-val');
@@ -46,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const terminalOutput = document.getElementById('terminal-output');
     const terminalTitle = document.getElementById('terminal-title');
     const actionGrid = document.getElementById('action-buttons-grid');
-    const actionContainer = document.getElementById('action-modules-container');
+    // actionContainer already declared at top
 
     closeTerminal.addEventListener('click', () => {
         terminalModal.style.display = 'none';
@@ -132,11 +146,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         injectedHTML += '</div></div>';
 
-        // Force inject directly inside the AI output frame so it's impossible to be hidden by CSS containers
+        // Force inject buttons into the middle stats panel natively
         if (foundTargets > 0) {
-            aiOutput.innerHTML += injectedHTML;
+            actionGrid.innerHTML = injectedHTML;
+            actionContainer.style.display = 'block';
+            actionPlaceholder.style.display = 'none';
         } else {
-            aiOutput.innerHTML += `<p style="color: yellow; margin-top: 10px; font-size: 0.8rem;">[Debug: No actionable ports (80,443,445,139,22,21) found in JSON data.]</p>`;
+            actionContainer.style.display = 'none';
+            actionPlaceholder.style.display = 'block';
         }
     }
 
@@ -148,10 +165,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // UI Update
         btnStart.disabled = true;
         btnStart.innerHTML = `<span class="icon">🔄</span> Scanning...`;
-        statusMsg.innerText = "Initiating active scan & scapy packet monitor (Please wait up to 2m)...";
-        statusMsg.className = "status-msg scanning";
+        statusMsg.innerText = "Scanning...";
+        logActivity(`Initiating active scan & scapy intercept against ${target}...`, '#38bdf8');
         aiOutput.innerHTML = `<p class="placeholder-text">Analyzing ${target}... querying OpenClaw Gateway.</p>`;
         actionContainer.style.display = 'none'; // reset buttons
+        actionPlaceholder.style.display = 'block';
         
         try {
             const res = await fetch('/api/v1/recon/start', {
@@ -169,9 +187,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     .replace(/\*(.*?)\*/g, '<em>$1</em>')
                     .replace(/\n/g, '<br>');
                     
-                statusMsg.innerText = `Scan Complete. Captured ${data.packets_captured} packets.`;
+                statusMsg.innerText = `Scan Complete.`;
                 statusMsg.className = "status-msg success";
-                aiOutput.innerHTML = `<strong>AI Advisor:</strong><br><br>${formattedAi}`;
+                logActivity(`Scan completed. Discovered ${data.scan_data?.nodes?.length || 0} entities. Captured ${data.packets_captured} packets.`, '#10b981');
+                
+                aiOutput.innerHTML = `${formattedAi}`;
                 
                 // Update graph
                 if (data.scan_data) {
@@ -195,13 +215,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Kill Switch
     btnKill.addEventListener('click', async () => {
         try {
+            logActivity("Executing hard kill-switch on all running subsystems...", "#f43f5e");
             const res = await fetch('/api/v1/system/kill', { method: 'POST' });
             if (res.ok) {
                 const data = await res.json();
-                alert(`Kill Switch Activated. Killed ${data.killed_processes.length} processes.`);
+                logActivity(`Kill Switch Activated. Terminated ${data.killed_processes.length} frozen processes.`, "#f43f5e");
             }
         } catch (e) {
-            alert("Failed to activate kill switch.");
+            logActivity("Failed to activate kill switch server endpoint.", "red");
         }
     });
     // Hash Cracking Integration
