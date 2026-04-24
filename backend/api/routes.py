@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Dict, Any
 from backend.core import system, packet_monitor, scanner, ai_advisor, executor, netdiscover_scanner
-from backend.models import hash_crack
+from backend.models import hash_crack, credential
 from backend.models.phase_gate import PhaseGate
 
 router = APIRouter()
@@ -24,6 +24,16 @@ class PhaseRequest(BaseModel):
 
 class HashRequest(BaseModel):
     hash_value: str
+
+class CredentialEntry(BaseModel):
+    target_ip: str
+    service: str
+    username: str
+    password: str
+    result: str
+
+class CredentialImport(BaseModel):
+    lines: list
 
 @router.post("/tools/execute")
 def execute_tool_route(req: ToolRequest):
@@ -57,6 +67,27 @@ def set_phase(req: PhaseRequest):
     if PhaseGate.set_phase(req.phase):
         return {"status": "success", "phase_info": PhaseGate.get_current_phase_info()}
     raise HTTPException(status_code=400, detail="Invalid phase level.")
+
+@router.get("/credentials")
+def get_credentials():
+    creds = credential.get_all_credentials()
+    return {"status": "success", "credentials": creds}
+
+@router.post("/credentials")
+def add_credential(req: CredentialEntry):
+    credential.log_credential(
+        target_ip=req.target_ip,
+        service=req.service,
+        username=req.username,
+        password=req.password,
+        result=req.result
+    )
+    return {"status": "success"}
+
+@router.post("/credentials/import")
+def import_credentials(req: CredentialImport):
+    res = credential.batch_import_hashes(req.lines)
+    return res
 
 @router.post("/agent/chat")
 async def chat_with_agent(req: ChatRequest):

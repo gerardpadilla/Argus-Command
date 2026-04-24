@@ -265,6 +265,168 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ============================================
+    // Credential Vault Logic
+    // ============================================
+    
+    // State
+    let currentCredentials = [];
+    const credTableBody = document.getElementById('cred-table-body');
+    const credSearch = document.getElementById('cred-search');
+    
+    async function fetchCredentials() {
+        if (!credTableBody) return;
+        try {
+            const res = await fetch('/api/v1/credentials');
+            const data = await res.json();
+            if (res.ok && data.credentials) {
+                currentCredentials = data.credentials;
+                renderCredentialTable(currentCredentials);
+            }
+        } catch (e) {
+            console.error("Failed to fetch credentials", e);
+        }
+    }
+    
+    function renderCredentialTable(creds) {
+        if (!credTableBody) return;
+        credTableBody.innerHTML = '';
+        if (creds.length === 0) {
+            credTableBody.innerHTML = '<tr><td colspan="6" style="padding: 8px; text-align: center; color: #94a3b8;">No credentials captured yet.</td></tr>';
+            return;
+        }
+        
+        creds.forEach(c => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="padding: 8px; border-bottom: 1px solid var(--border-color);">${c.target_ip}</td>
+                <td style="padding: 8px; border-bottom: 1px solid var(--border-color);">${c.service}</td>
+                <td style="padding: 8px; border-bottom: 1px solid var(--border-color);">${c.username}</td>
+                <td style="padding: 8px; border-bottom: 1px solid var(--border-color); font-family: monospace;">${c.password}</td>
+                <td style="padding: 8px; border-bottom: 1px solid var(--border-color);">${c.result}</td>
+                <td style="padding: 8px; border-bottom: 1px solid var(--border-color); font-size: 0.8em; color: #94a3b8;">${new Date(c.timestamp).toLocaleString()}</td>
+            `;
+            credTableBody.appendChild(tr);
+        });
+    }
+    
+    if (credSearch) {
+        credSearch.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const filtered = currentCredentials.filter(c => 
+                c.target_ip.toLowerCase().includes(query) ||
+                c.service.toLowerCase().includes(query) ||
+                c.username.toLowerCase().includes(query) ||
+                c.result.toLowerCase().includes(query)
+            );
+            renderCredentialTable(filtered);
+        });
+    }
+    
+    // Add Manual
+    const btnAddCred = document.getElementById('btn-add-cred');
+    if (btnAddCred) {
+        btnAddCred.addEventListener('click', async () => {
+            const ip = document.getElementById('cred-ip').value.trim() || 'Unknown';
+            const service = document.getElementById('cred-service').value.trim() || 'Unknown';
+            const user = document.getElementById('cred-user').value.trim();
+            const pass = document.getElementById('cred-pass').value.trim();
+            
+            if (!user || !pass) return alert("Username and Password are required.");
+            
+            try {
+                const res = await fetch('/api/v1/credentials', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target_ip: ip, service: service, username: user, password: pass, result: 'Manual Entry' })
+                });
+                if (res.ok) {
+                    document.getElementById('cred-ip').value = '';
+                    document.getElementById('cred-service').value = '';
+                    document.getElementById('cred-user').value = '';
+                    document.getElementById('cred-pass').value = '';
+                    fetchCredentials();
+                    logActivity(`Manual credential added for ${ip}`, '#4ade80');
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    }
+    
+    // Drag and Drop Zone
+    const dropZone = document.getElementById('drop-zone');
+    if (dropZone) {
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.background = 'rgba(74, 222, 128, 0.2)';
+        });
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.style.background = 'rgba(0,0,0,0.2)';
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.background = 'rgba(0,0,0,0.2)';
+            
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                const file = e.dataTransfer.files[0];
+                const reader = new FileReader();
+                reader.onload = async function(event) {
+                    const text = event.target.result;
+                    const lines = text.split(/\r?\n/);
+                    try {
+                        const res = await fetch('/api/v1/credentials/import', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ lines: lines })
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                            alert(`Successfully imported ${data.imported} hashes!`);
+                            fetchCredentials();
+                        }
+                    } catch (err) {
+                        alert("Failed to upload hashes.");
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+    }
+    
+    // Export Logic
+    document.getElementById('btn-export-csv')?.addEventListener('click', () => {
+        if(currentCredentials.length === 0) return alert("Nothing to export.");
+        const header = ["Target IP", "Service", "Username", "Password", "Result", "Timestamp"];
+        const rows = currentCredentials.map(c => [
+            `"${c.target_ip}"`, `"${c.service}"`, `"${c.username}"`, 
+            `"${c.password}"`, `"${c.result}"`, `"${c.timestamp}"`
+        ]);
+        const csv = [header.join(','), ...rows.map(r => r.join(','))].join('\n');
+        
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `argus_credentials_${Date.now()}.csv`;
+        a.click();
+    });
+    
+    document.getElementById('btn-export-json')?.addEventListener('click', () => {
+        if(currentCredentials.length === 0) return alert("Nothing to export.");
+        const json = JSON.stringify(currentCredentials, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `argus_credentials_${Date.now()}.json`;
+        a.click();
+    });
+
+    // Initial Fetch
+    fetchCredentials();
+
     // Kill Switch
     btnKill.addEventListener('click', async () => {
         try {

@@ -144,6 +144,62 @@
             </section>
         </div>
 
+        <!-- Tier 5: Credential Vault -->
+        <div class="tier-full" style="margin-top: 15px;">
+            <section class="glass-panel">
+                <h2><span class="icon">🛂</span> Credential Vault</h2>
+                
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <!-- Left: Manual Entry & Actions -->
+                    <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 15px;">
+                        <div class="glass-panel" style="background: rgba(0,0,0,0.2); padding: 15px;">
+                            <h3 style="margin-top: 0; font-size: 1rem;">Add Credential</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                                <input type="text" id="cred-ip" placeholder="Target IP" style="background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: #fff; padding: 6px; border-radius: 4px;">
+                                <input type="text" id="cred-service" placeholder="Service (e.g. ssh)" style="background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: #fff; padding: 6px; border-radius: 4px;">
+                                <input type="text" id="cred-user" placeholder="Username" style="background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: #fff; padding: 6px; border-radius: 4px;">
+                                <input type="text" id="cred-pass" placeholder="Password" style="background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: #fff; padding: 6px; border-radius: 4px;">
+                            </div>
+                            <button id="btn-add-cred" class="btn-primary" style="width: 100%;">Add Record</button>
+                        </div>
+                        
+                        <div id="drop-zone" class="glass-panel" style="background: rgba(0,0,0,0.2); padding: 15px; border: 2px dashed #4ade80; text-align: center; cursor: pointer; transition: all 0.3s ease;">
+                            <p style="margin: 0; color: #4ade80;">📁 Drag & Drop <b>.txt</b> Wordlists or Hash Dumps here</p>
+                            <small style="color: #94a3b8;">Format: user:hash or raw pass</small>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px;">
+                            <button id="btn-export-csv" class="btn-action" style="flex: 1;">⬇️ Export CSV</button>
+                            <button id="btn-export-json" class="btn-action" style="flex: 1;">⬇️ Export JSON</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Table -->
+                    <div style="flex: 3; min-width: 400px; display: flex; flex-direction: column;">
+                        <input type="text" id="cred-search" placeholder="Filter by IP, Service, or Username..." style="background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: #fff; padding: 8px; border-radius: 6px; margin-bottom: 10px; width: 100%;">
+                        <div style="flex-grow: 1; overflow-y: auto; max-height: 250px; border: 1px solid var(--border-color); border-radius: 6px;">
+                            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9em;">
+                                <thead style="background: rgba(0,0,0,0.8); position: sticky; top: 0;">
+                                    <tr>
+                                        <th style="padding: 8px; border-bottom: 1px solid var(--border-color);">Target</th>
+                                        <th style="padding: 8px; border-bottom: 1px solid var(--border-color);">Service</th>
+                                        <th style="padding: 8px; border-bottom: 1px solid var(--border-color);">Username</th>
+                                        <th style="padding: 8px; border-bottom: 1px solid var(--border-color);">Password/Hash</th>
+                                        <th style="padding: 8px; border-bottom: 1px solid var(--border-color);">Status</th>
+                                        <th style="padding: 8px; border-bottom: 1px solid var(--border-color);">Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cred-table-body">
+                                    <!-- Populated dynamically -->
+                                    <tr><td colspan="6" style="padding: 8px; text-align: center; color: #94a3b8;">Loading credentials...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
     </main>
 </div>
 
