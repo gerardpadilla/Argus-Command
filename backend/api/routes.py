@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Dict, Any
-from backend.core import system, packet_monitor, scanner, ai_advisor, executor, netdiscover_scanner
+from backend.core import system, packet_monitor, scanner, ai_advisor, executor, netdiscover_scanner, state_manager
 from backend.models import hash_crack, credential
 from backend.models.phase_gate import PhaseGate
 
@@ -34,6 +33,9 @@ class CredentialEntry(BaseModel):
 
 class CredentialImport(BaseModel):
     lines: list
+
+class TargetRequest(BaseModel):
+    target: str
 
 @router.post("/tools/execute")
 def execute_tool_route(req: ToolRequest):
@@ -88,6 +90,43 @@ def add_credential(req: CredentialEntry):
 def import_credentials(req: CredentialImport):
     res = credential.batch_import_hashes(req.lines)
     return res
+
+# ==========================================
+# Section 4.5: AI Agent Integration Endpoints
+# ==========================================
+
+@router.get("/agent/status")
+def get_agent_status():
+    return state_manager.read_state()
+
+@router.post("/agent/next-target")
+def set_agent_target(req: TargetRequest):
+    state_manager.update_state({"current_target": req.target})
+    return {"status": "success", "target": req.target}
+
+@router.get("/agent/findings")
+def get_agent_findings():
+    # In a full app this would query a findings DB, for now returning mocked aggregate
+    return {"status": "success", "findings": ["Discovered 3 ports on 192.168.1.10", "Vuln 0 tested"]}
+
+@router.post("/agent/credential-add")
+def agent_add_credential(req: CredentialEntry):
+    # This is a wrapper for the Credential Vault API specific to agents
+    credential.log_credential(
+        target_ip=req.target_ip,
+        service=req.service,
+        username=req.username,
+        password=req.password,
+        result=req.result
+    )
+    # Trigger auto-capture of cred evidence if we wanted to inside evidence.py
+    return {"status": "success", "message": "Logged to vault"}
+
+@router.get("/agent/recommendations")
+async def get_agent_recommendations():
+    # Wrap ai_advisor explicitly for the agent
+    res = await ai_advisor.analyze_scan("Agent requesting strategic recommendations.")
+    return {"status": "success", "recommendation": res}
 
 @router.post("/agent/chat")
 async def chat_with_agent(req: ChatRequest):

@@ -3,6 +3,7 @@ import subprocess
 import xml.etree.ElementTree as ET
 import json
 import time
+from backend.core import evidence
 
 OUTPUT_XML = "nmap_scan.xml"
 
@@ -21,6 +22,14 @@ def run_nmap_scan(target="127.0.0.1", ports="1-1000"):
     except (subprocess.CalledProcessError, FileNotFoundError) as e:
         print(f"Nmap failed or not found: {e}. Generating Mock Data for Demo.")
         _generate_mock_xml(target)
+        
+    # Auto-capture evidence per PRD Section 4.6
+    try:
+        with open(OUTPUT_XML, 'r') as f:
+            xml_data = f.read()
+        evidence.capture_scan_evidence(target, xml_data, tool_name="nmap")
+    except Exception as e:
+        print(f"Failed to capture evidence: {e}")
         
     return parse_nmap_xml(OUTPUT_XML)
 
