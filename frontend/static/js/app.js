@@ -112,35 +112,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!scanData || !scanData.nodes) return; 
 
-        let hostsMap = {}; 
         scanData.nodes.forEach(n => {
-            if (n.group === 'host') hostsMap[n.id] = n.label;
-        });
-
-        scanData.nodes.forEach(n => {
-            if (n.group === 'port') {
-                let connectedEdge = scanData.edges.find(e => e.to === n.id);
-                if (connectedEdge && hostsMap[connectedEdge.from]) {
-                    const targetIp = hostsMap[connectedEdge.from];
-                    
-                    const firstLine = n.label.split('\n')[0];
-                    const portStr = firstLine.replace(/[^0-9]/g, '');
-                    
-                    if (portStr) {
-                        if (portStr === '80' || portStr === '443') {
-                            injectedHTML += `<button class="btn-action" onclick="runActionTool('nikto', '${targetIp}', '${portStr}', this)">Run Nikto (${portStr}) on ${targetIp}</button>`;
-                            foundTargets++;
-                        }
-                        if (portStr === '445' || portStr === '139') {
-                            injectedHTML += `<button class="btn-action" onclick="runActionTool('enum4linux', '${targetIp}', '${portStr}', this)">Run Enum4Linux on ${targetIp}</button>`;
-                            foundTargets++;
-                        }
-                        if (portStr === '22' || portStr === '3389' || portStr === '21') {
-                            injectedHTML += `<button class="btn-action" onclick="runActionTool('hydra', '${targetIp}', '${portStr}', this)">Run Hydra on ${targetIp}</button>`;
-                            foundTargets++;
-                        }
+            if (n.group === 'host' && n.ports && n.ports.length > 0) {
+                const targetIp = n.label.split('\n')[0];
+                
+                n.ports.forEach(p => {
+                    const portStr = String(p.port);
+                    if (portStr === '80' || portStr === '443') {
+                        injectedHTML += `<button class="btn-action" onclick="runActionTool('nikto', '${targetIp}', '${portStr}', this)">Run Nikto (${portStr}) on ${targetIp}</button>`;
+                        foundTargets++;
                     }
-                }
+                    if (portStr === '445' || portStr === '139') {
+                        injectedHTML += `<button class="btn-action" onclick="runActionTool('enum4linux', '${targetIp}', '${portStr}', this)">Run Enum4Linux on ${targetIp}</button>`;
+                        foundTargets++;
+                    }
+                    if (portStr === '22' || portStr === '3389' || portStr === '21') {
+                        injectedHTML += `<button class="btn-action" onclick="runActionTool('hydra', '${targetIp}', '${portStr}', this)">Run Hydra on ${targetIp}</button>`;
+                        foundTargets++;
+                    }
+                });
             }
         });
 

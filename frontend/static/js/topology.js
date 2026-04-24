@@ -56,12 +56,43 @@ function initTopology(containerId) {
     });
 }
 
+function renderServiceList(ports) {
+    if (!ports || ports.length === 0) return "⚪ No open ports";
+    
+    let lines = ports.map(p => {
+        let note = p.notes ? ` [${p.notes}]` : "";
+        return `├── ${p.port}/${p.service}/${p.product}${note}`;
+    });
+    
+    return lines.join("\n");
+}
+
 function updateTopology(scanData) {
     if (!network) return;
     
-    // We expect scanData to have { nodes: [...], edges: [...] }
+    // Process incoming nodes to format the label
+    if (scanData.nodes) {
+        scanData.nodes.forEach(node => {
+            if (node.ports) {
+                node.label += "\n" + renderServiceList(node.ports);
+            }
+        });
+    }
+    
     const nodesDataset = new vis.DataSet(scanData.nodes);
     const edgesDataset = new vis.DataSet(scanData.edges);
+    
+    network.setOptions({
+        nodes: {
+            shape: "box",
+            margin: 10,
+            font: { color: "#000000", multi: true, align: "left" }
+        },
+        edges: {
+            color: { color: "#94a3b8" },
+            width: 2
+        }
+    });
     
     network.setData({
         nodes: nodesDataset,

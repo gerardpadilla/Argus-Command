@@ -50,7 +50,7 @@ def _generate_mock_xml(target):
 
 def parse_nmap_xml(xml_file):
     """
-    Parses Nmap XML output into a JSON graph payload for Vis.js representation.
+    Parses Nmap XML output into a JSON graph payload for Vis.js representation. (Option A Redesign)
     """
     if not os.path.exists(xml_file):
         return {"nodes": [], "edges": []}
@@ -62,36 +62,77 @@ def parse_nmap_xml(xml_file):
     edges = []
     
     # Root node (Scanner)
-    nodes.append({"id": "scanner", "label": "Scanner", "group": "scanner", "shape": "image", "image": "https://img.icons8.com/color/48/000000/kali-linux.png"})
+    nodes.append({"id": "scanner", "label": "Scanner\n(Kali Base)", "group": "scanner", "shape": "image", "image": "https://img.icons8.com/color/48/000000/kali-linux.png"})
+    
+    actionable_ports = {"80", "443", "8080", "445", "139"}
+    blocked_ports = {"22", "21", "3389"}
     
     host_id = 1
     for host in root.findall('host'):
+        os_elem = host.find('os/osmatch')
+        os_guess = os_elem.get('name') if os_elem is not None else "Unknown OS"
+        os_accuracy = os_elem.get('accuracy') if os_elem is not None else "0"
+        
+        hostname_elem = host.find('hostnames/hostname')
+        hostname = hostname_elem.get('name') if hostname_elem is not None else None
+        
         status = host.find('status')
         if status is not None and status.get('state') == 'up':
             address = host.find('address')
             ip = address.get('addr') if address is not None else f"Unknown-{host_id}"
             
-            # Host Node
             h_id = f"host_{host_id}"
-            nodes.append({"id": h_id, "label": ip, "group": "host", "shape": "box", "color": "#00ffcc", "font": {"color": "#000000", "multi": True, "bold": True}})
-            edges.append({"from": "scanner", "to": h_id})
             
+            # Extract Ports
+            host_ports = []
             ports = host.find('ports')
             if ports is not None:
                 for port in ports.findall('port'):
                     state = port.find('state')
                     if state.get('state') == 'open':
-                        portid = port.get('portid')
                         service = port.find('service')
-                        svc_name = service.get('name') if service is not None else "unknown"
-                        svc_product = service.get('product') if service is not None else ""
+                        host_ports.append({
+                            "port": port.get('portid'),
+                            "service": service.get('name') if service is not None else "unknown",
+                            "product": service.get('product') if service is not None else "",
+                            "notes": None
+                        })
                         
-                        # Port Node
-                        p_id = f"port_{host_id}_{portid}"
-                        banner = f"Port: {portid}\nService: {svc_name}\nProduct: {svc_product}"
-                        nodes.append({"id": p_id, "label": f"<b>{portid}</b>\n{svc_name}", "title": banner, "group": "port", "shape": "ellipse", "color": "#ffb84d", "font": {"color": "#000000", "multi": True}})
-                        edges.append({"from": h_id, "to": p_id})
-                        
+            # Determine semantic status
+            node_status = "unknown"
+            node_color = "#9ca3af" # Gray
+            if host_ports:
+                port_ids = [p["port"] for p in host_ports]
+                if any(p in actionable_ports for p in port_ids):
+                    node_status = "caution"
+                    node_color = "#facc15" # Yellow
+                elif any(p in blocked_ports for p in port_ids):
+                    node_status = "blocked"
+                    node_color = "#f87171" # Red
+                else:
+                    node_status = "accessible"
+                    node_color = "#4ade80" # Green
+            
+            # Form Label Output
+            host_label = f"{ip}\n{hostname or 'Unknown Host'}\n{os_guess}"
+            
+            # Master Node Append
+            nodes.append({
+                "id": h_id,
+                "label": host_label,
+                "group": "host",
+                "shape": "box",
+                "color": node_color,
+                "status": node_status,
+                "os_info": f"{os_guess} | {os_accuracy}%",
+                "hostname": hostname,
+                "ports": host_ports,
+                "font": {"multi": True, "align": "left"}
+            })
+            
+            # Single Edge (Scanner to Host)
+            edges.append({"from": "scanner", "to": h_id})
+            
             host_id += 1
             
     return {"nodes": nodes, "edges": edges}
