@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Argus Command v2.0</title>
     <!-- Offline Libraries -->
-    <script src="/static/js/vis-network.min.js"></script>
     <link rel="stylesheet" href="/static/css/styles.css?v=3">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
@@ -19,7 +18,10 @@
             <h1>Argus Command <span class="version-tag">v2.0 (Air-Gapped)</span></h1>
         </div>
         
-        <!-- Removed system-monitor from header since it is now in Stats panel -->
+        <div class="system-monitor" style="display: flex; gap: 20px;">
+            <div class="stat"><span class="label">CPU</span><span class="value" id="cpu-val">--%</span></div>
+            <div class="stat"><span class="label">RAM</span><span class="value" id="ram-val">--%</span><span class="sub-value" id="ram-mb">(-- / -- MB)</span></div>
+        </div>
     </header>
 
     <!-- Tier 1: Agent Status Bar -->
@@ -44,13 +46,13 @@
         <section class="glass-panel" style="margin-bottom: -10px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div class="input-group" style="flex-direction: row; align-items: center; gap: 15px;">
+                    <button id="btn-netdiscover" class="btn-action" style="margin: 0; padding: 10px 20px; width: auto; background: #6b21a8; border-color: #9333ea;">
+                        <span class="icon">📡</span> Run Netdiscover
+                    </button>
                     <label for="target-ip">Target IP / CIDR</label>
                     <input type="text" id="target-ip" value="127.0.0.1" placeholder="e.g., 10.10.10.0/24" style="width: 250px;">
                     <button id="btn-start-recon" class="btn-primary" style="margin: 0; padding: 10px 20px; width: auto;">
                         <span class="icon">⚡</span> Start Recon
-                    </button>
-                    <button id="btn-netdiscover" class="btn-action" style="margin: 0; padding: 10px 20px; width: auto; background: #6b21a8; border-color: #9333ea;">
-                        <span class="icon">📡</span> Run Netdiscover
                     </button>
                     <div class="status-msg" id="recon-status" style="margin: 0;">Ready</div>
                 </div>
@@ -59,18 +61,20 @@
 
         <!-- Tier 2: Topology & Live Feed -->
         <div class="tier-split-50">
-            <!-- Left: Network Topology -->
+            <!-- Left: Netdiscover Output -->
             <section class="glass-panel" style="display: flex; flex-direction: column;">
-                <h2>Network Topology (Nmap)</h2>
-                <div id="vis-network-container"></div>
+                <h2><span class="icon">📡</span> Netdiscover Map</h2>
+                <div id="netdiscover-output" class="ai-content feed-log" style="font-family: monospace; white-space: pre; overflow-x: auto; flex-grow: 1;">
+                    <span class="placeholder-text">Netdiscover map will appear here in linear topology format...</span>
+                </div>
             </section>
             
-            <!-- Right: Netdiscover Output & Live Feed -->
+            <!-- Right: Nmap Output & Live Feed -->
             <section style="display: flex; flex-direction: column; gap: 15px;">
                 <div class="glass-panel" style="flex: 1; display: flex; flex-direction: column;">
-                    <h2><span class="icon">📡</span> Netdiscover Map</h2>
-                    <div id="netdiscover-output" class="ai-content feed-log" style="font-family: monospace; white-space: pre;">
-                        <span class="placeholder-text">Netdiscover map will appear here in linear topology format...</span>
+                    <h2>Network Topology (Nmap)</h2>
+                    <div id="vis-network-container" class="ai-content feed-log" style="font-family: monospace; white-space: pre; overflow-x: auto;">
+                        <span class="placeholder-text">Awaiting Nmap scan...</span>
                     </div>
                 </div>
                 <div class="glass-panel" style="flex: 1; display: flex; flex-direction: column;">
@@ -103,14 +107,9 @@
                 <p id="actions-placeholder" class="placeholder-text" style="margin-top: 20px;">No actionable ports discovered yet.</p>
             </section>
 
-            <!-- Right: Statistics -->
-            <section class="glass-panel">
-                <h2><span class="icon">📊</span> Statistics</h2>
-                <div class="system-monitor" style="justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 15px;">
-                    <div class="stat"><span class="label">CPU</span><span class="value" id="cpu-val">--%</span></div>
-                    <div class="stat"><span class="label">RAM</span><span class="value" id="ram-val">--%</span><span class="sub-value" id="ram-mb">(-- / -- MB)</span></div>
-                </div>
-                <button id="btn-kill-switch" class="btn-danger" style="width: 100%;">KILL SCANS</button>
+            <!-- Right: Blank or previously Stats -->
+            <section class="glass-panel" style="display: flex; flex-direction: column; justify-content: center;">
+                <button id="btn-kill-switch" class="btn-danger" style="width: 100%; height: 50px; font-size: 1.2rem;">KILL SCANS</button>
             </section>
         </div>
 
@@ -181,12 +180,12 @@
                             <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9em;">
                                 <thead style="background: rgba(0,0,0,0.8); position: sticky; top: 0;">
                                     <tr>
-                                        <th style="padding: 8px; border-bottom: 1px solid var(--border-color);">Target</th>
-                                        <th style="padding: 8px; border-bottom: 1px solid var(--border-color);">Service</th>
-                                        <th style="padding: 8px; border-bottom: 1px solid var(--border-color);">Username</th>
-                                        <th style="padding: 8px; border-bottom: 1px solid var(--border-color);">Password/Hash</th>
-                                        <th style="padding: 8px; border-bottom: 1px solid var(--border-color);">Status</th>
-                                        <th style="padding: 8px; border-bottom: 1px solid var(--border-color);">Time</th>
+                                        <th style="padding: 8px; border-bottom: 1px solid var(--border-color); min-width: 100px;">Target</th>
+                                        <th style="padding: 8px; border-bottom: 1px solid var(--border-color); min-width: 80px;">Service</th>
+                                        <th style="padding: 8px; border-bottom: 1px solid var(--border-color); min-width: 100px;">Username</th>
+                                        <th style="padding: 8px; border-bottom: 1px solid var(--border-color); word-break: break-all;">Password/Hash</th>
+                                        <th style="padding: 8px; border-bottom: 1px solid var(--border-color); min-width: 100px;">Status</th>
+                                        <th style="padding: 8px; border-bottom: 1px solid var(--border-color); min-width: 150px;">Time</th>
                                     </tr>
                                 </thead>
                                 <tbody id="cred-table-body">
