@@ -1,0 +1,18 @@
+# Virtual Environments
+.venv/
+venv/
+env/
+
+# Python Cache
+__pycache__/
+*.pyc
+
+# Environment Files
+.env
+
+# Scan & Packet Outputs (DO NOT EXFILTRATE TO PUBLIC GITHUB)
+nmap_scan.xml
+scapy_capture.json
+
+# OS Files
+.DS_Store
