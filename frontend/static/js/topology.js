@@ -26,19 +26,19 @@ function initTopology(containerId) {
         edges: {
             color: { color: '#3c4b6e', highlight: '#38bdf8' },
             width: 2,
-            smooth: { type: 'continuous' }
+            smooth: { type: 'cubicBezier', forceDirection: 'horizontal' }
+        },
+        layout: {
+            hierarchical: {
+                enabled: true,
+                direction: 'LR',
+                sortMethod: 'directed',
+                levelSeparation: 300,
+                nodeSpacing: 100
+            }
         },
         physics: {
-            forceAtlas2Based: {
-                gravitationalConstant: -50,
-                centralGravity: 0.01,
-                springLength: 100,
-                springConstant: 0.08
-            },
-            maxVelocity: 50,
-            solver: 'forceAtlas2Based',
-            timestep: 0.35,
-            stabilization: { iterations: 150 }
+            enabled: false
         },
         interaction: {
             hover: true,

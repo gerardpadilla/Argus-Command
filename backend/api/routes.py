@@ -1,8 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Dict, Any
-
-from backend.core import system, packet_monitor, scanner, ai_advisor, executor
+from backend.core import system, packet_monitor, scanner, ai_advisor, executor, netdiscover_scanner
 from backend.models import hash_crack
 from backend.models.phase_gate import PhaseGate
 
@@ -90,6 +89,17 @@ async def start_recon(req: ScanRequest):
         "scan_data": scan_results,
         "packets_captured": len(packets),
         "ai_analysis": ai_advice
+    }
+
+@router.post("/recon/netdiscover")
+def run_netdiscover(req: ScanRequest):
+    """
+    Triggers ARP sweep on local subnet.
+    """
+    devices = netdiscover_scanner.run_netdiscover(target_subnet=req.target)
+    return {
+        "status": "success",
+        "devices": devices
     }
 
 @router.get("/recon/packets")

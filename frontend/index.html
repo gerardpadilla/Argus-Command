@@ -49,6 +49,9 @@
                     <button id="btn-start-recon" class="btn-primary" style="margin: 0; padding: 10px 20px; width: auto;">
                         <span class="icon">⚡</span> Start Recon
                     </button>
+                    <button id="btn-netdiscover" class="btn-action" style="margin: 0; padding: 10px 20px; width: auto; background: #6b21a8; border-color: #9333ea;">
+                        <span class="icon">📡</span> Run Netdiscover
+                    </button>
                     <div class="status-msg" id="recon-status" style="margin: 0;">Ready</div>
                 </div>
             </div>
@@ -58,15 +61,23 @@
         <div class="tier-split-50">
             <!-- Left: Network Topology -->
             <section class="glass-panel" style="display: flex; flex-direction: column;">
-                <h2>Network Topology</h2>
+                <h2>Network Topology (Nmap)</h2>
                 <div id="vis-network-container"></div>
             </section>
             
-            <!-- Right: Live Activity Feed -->
-            <section class="glass-panel" style="display: flex; flex-direction: column;">
-                <h2><span class="icon">📡</span> Live Activity Feed</h2>
-                <div id="live-activity-feed" class="ai-content feed-log">
-                    <div><span class="timestamp">[00:00:00]</span>Argus System Initialized. Awaiting targets...</div>
+            <!-- Right: Netdiscover Output & Live Feed -->
+            <section style="display: flex; flex-direction: column; gap: 15px;">
+                <div class="glass-panel" style="flex: 1; display: flex; flex-direction: column;">
+                    <h2><span class="icon">📡</span> Netdiscover Map</h2>
+                    <div id="netdiscover-output" class="ai-content feed-log" style="font-family: monospace; white-space: pre;">
+                        <span class="placeholder-text">Netdiscover map will appear here in linear topology format...</span>
+                    </div>
+                </div>
+                <div class="glass-panel" style="flex: 1; display: flex; flex-direction: column;">
+                    <h2><span class="icon">📝</span> Live Activity Feed</h2>
+                    <div id="live-activity-feed" class="ai-content feed-log">
+                        <div><span class="timestamp">[00:00:00]</span>Argus System Initialized. Awaiting targets...</div>
+                    </div>
                 </div>
             </section>
         </div>

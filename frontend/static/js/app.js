@@ -209,6 +209,62 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Setup variables at top if not done properly
+    const btnNetdiscover = document.getElementById('btn-netdiscover');
+    const netdiscoverOutput = document.getElementById('netdiscover-output');
+    
+    // Netdiscover Integration
+    if (btnNetdiscover) {
+        btnNetdiscover.addEventListener('click', async () => {
+            const target = targetInput.value.trim();
+            if (!target) return;
+            
+            btnNetdiscover.disabled = true;
+            btnNetdiscover.innerHTML = `<span class="icon">🔄</span> Sweeping...`;
+            logActivity(`Initiating Netdiscover ARP sweep on ${target}...`, '#8b5cf6');
+            netdiscoverOutput.innerHTML = `Sweeping ${target} for live MAC addresses... this takes ~5 seconds.`;
+            
+            try {
+                const res = await fetch('/api/v1/recon/netdiscover', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target: target })
+                });
+                
+                const data = await res.json();
+                if (res.ok && data.devices) {
+                    let mapHtml = `┌─────────────────────────────────────────────────────────────┐\n`;
+                    mapHtml    += `│  🖥️  SCANNER (Kali Base)                                    │\n`;
+                    mapHtml    += `│    │                                                         │\n`;
+                    
+                    data.devices.forEach((dev, index) => {
+                        const isLast = index === data.devices.length - 1;
+                        const branch = isLast ? "└──" : "├──";
+                        // Padding formatting
+                        const ipPad = dev.ip.padEnd(16, " ");
+                        mapHtml += `│    ${branch} 🟢 ${ipPad} 🔵 [${dev.mac}] ${dev.vendor}\n`;
+                    });
+                    
+                    if(data.devices.length === 0) {
+                        mapHtml += `│    └── ⚪ No active hosts found on ${target}.\n`;
+                    }
+                    
+                    mapHtml += `└─────────────────────────────────────────────────────────────┘`;
+                    netdiscoverOutput.innerHTML = mapHtml;
+                    logActivity(`Netdiscover Complete: Found ${data.devices.length} hosts.`, '#c084fc');
+                } else {
+                    netdiscoverOutput.innerHTML = "Backend error processing ARP sweep.";
+                }
+            } catch (e) {
+                netdiscoverOutput.innerHTML = "Failed to communicate with Netdiscover endpoint.";
+                logActivity("Netdiscover network failure.", "red");
+            } finally {
+                btnNetdiscover.disabled = false;
+                btnNetdiscover.innerHTML = `<span class="icon">📡</span> Run Netdiscover`;
+            }
+        });
+    }
+
     // Kill Switch
     btnKill.addEventListener('click', async () => {
         try {
